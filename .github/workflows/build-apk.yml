@@ -1,0 +1,48 @@
+
+name: Build Monster Adventures APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download project
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Extract Android project
+        run: |
+          ARCHIVE=$(find . -maxdepth 1 -iname '*.zip' | head -n 1)
+          test -n "$ARCHIVE"
+          mkdir extracted
+          unzip "$ARCHIVE" -d extracted
+          test -f extracted/Monster_Adventures_Android/app/build.gradle
+
+      - name: Build APK
+        run: |
+          cd extracted/Monster_Adventures_Android
+          gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Monster-Adventures-APK
+          path: extracted/Monster_Adventures_Android/app/build/outputs/apk/debug/app-debug.apk
